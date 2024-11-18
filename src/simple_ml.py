@@ -20,7 +20,7 @@ def add(x, y):
         Sum of x + y
     """
     ### BEGIN YOUR CODE
-    pass
+    return x + y
     ### END YOUR CODE
 
 
@@ -48,7 +48,15 @@ def parse_mnist(image_filename, label_filename):
                 for MNIST will contain the values 0-9.
     """
     ### BEGIN YOUR CODE
-    pass
+    with gzip.open(image_filename, 'rb') as f:
+      f.read(16) # 跳过前16个字节
+      file_content = f.read()
+      image_content = (np.frombuffer(file_content, dtype=np.uint8).astype(np.float32)/255).reshape(-1, 784)
+    with gzip.open(label_filename, 'rb') as f:
+      f.read(8) # 跳过前8个字节
+      file_content = f.read()
+      label_content = np.frombuffer(file_content, dtype=np.uint8)
+    return image_content, label_content
     ### END YOUR CODE
 
 
@@ -68,7 +76,14 @@ def softmax_loss(Z, y):
         Average softmax loss over the sample.
     """
     ### BEGIN YOUR CODE
-    pass
+    # Compute the log-sum-exp for each sample in the batch
+    log_sum_exp = np.log(np.sum(np.exp(Z), axis=1))
+    # Gather the logits corresponding to the true classes
+    correct_class_logits = Z[np.arange(Z.shape[0]), y]
+    # Compute the loss for each sample
+    loss = -correct_class_logits + log_sum_exp
+    # Return the average loss over the batch
+    return np.mean(loss)
     ### END YOUR CODE
 
 
@@ -91,7 +106,7 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
         None
     """
     ### BEGIN YOUR CODE
-    pass
+    
     ### END YOUR CODE
 
 

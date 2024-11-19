@@ -132,9 +132,12 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
         theta -= lr * gradient
     ### END YOUR CODE
 
+def normalize_softmax(x):
+  tmp = np.exp(x)
+  return tmp/np.sum(tmp, axis=1, keepdims=True)
 
 def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
-    """ Run a single epoch of SGD for a two-layer neural network defined by the
+    """ Run a single epoch of SGD for a two-layer neural network defined by the 
     weights W1 and W2 (with no bias terms):
         logits = ReLU(X * W1) * W2
     The function should use the step size lr, and the specified batch size (and
@@ -156,7 +159,22 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
         None
     """
     ### BEGIN YOUR CODE
-    pass
+    n_batch = X.shape[0] // batch
+    for i in range(n_batch):
+        X_batch = X[i*batch:(i+1)*batch]
+        y_batch = y[i*batch:(i+1)*batch]
+        Z1_batch = np.maximum(X_batch @ W1, 0)
+        Z2_batch = Z1_batch @ W2
+        one_hot = np.eye(W2.shape[1])[y_batch]
+        # Z2 反向传播，输出层梯度
+        G2_batch = normalize_softmax(Z2_batch) - one_hot
+        # Z1 反向传播，计算梯度，注意 ReLU 的导数，链式法则，隐藏层梯度
+        G1_batch = (Z1_batch>0) * (G2_batch @ W2.T)
+        # 更新 W1 和 W2
+        gradient_W1 = (X_batch.T @ G1_batch) / X_batch.shape[0]
+        gradient_W2 = (Z1_batch.T @ G2_batch) / Z1_batch.shape[0]
+        W1 -= lr * gradient_W1
+        W2 -= lr * gradient_W2
     ### END YOUR CODE
 
 

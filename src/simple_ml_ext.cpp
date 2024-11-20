@@ -5,6 +5,10 @@
 
 namespace py = pybind11;
 
+template<class T>
+T get_from_2d_array(T* arr, int col_size, int row_idx, int col_idx){
+  return arr[row_idx*col_size + col_idx];
+}
 
 void softmax_regression_epoch_cpp(const float *X, const unsigned char *y,
 								  float *theta, size_t m, size_t n, size_t k,
@@ -33,7 +37,46 @@ void softmax_regression_epoch_cpp(const float *X, const unsigned char *y,
      */
 
     /// BEGIN YOUR CODE
+    size_t n_batch = m / batch;
+    if (m % batch != 0) {
+        n_batch += 1;
+    }
+    for (size_t i = 0; i < n_batch; ++i) {
+        std::vector<std::vector<float>> inter_array(batch, std::vector<float>(k, 0));
+        size_t minibatch = 0;
+        for (; minibatch < batch && minibatch + i * batch < m; ++minibatch) {
+            size_t idx = i * batch + minibatch;
+            float sum = 0;
+            for (size_t col=0; col < k; ++col) {
+                for (size_t j=0; j < n; ++j) {
+                    inter_array[minibatch][col] += get_from_2d_array(X, n, idx, j) * get_from_2d_array(theta, k, j, col);
+                }
 
+                inter_array[minibatch][col] = std::exp(inter_array[minibatch][col]);
+                sum += inter_array[minibatch][col];
+            }
+
+            // normalize_softmax and minus one-hot
+            for (size_t col=0; col < k; ++col) {
+                inter_array[minibatch][col] /= sum;
+                if (col == y[minibatch + i * batch]) {
+                    inter_array[minibatch][col] -= 1;
+                }
+            }
+        }
+
+        // calculate gradient
+        for (size_t row = 0; row < n; ++row) {
+            for (size_t col = 0; col < k; ++col) {
+                float tmp = 0;
+                for (size_t j = 0; j < minibatch; ++j) {
+                    tmp += get_from_2d_array(X, n, i * batch + j, row) * inter_array[j][col];
+                }
+                tmp = tmp / minibatch;
+                theta[row * k + col] -= lr * tmp;
+            }
+        }
+    }
     /// END YOUR CODE
 }
 
